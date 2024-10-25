@@ -1,0 +1,171 @@
+@startuml
+
+' ----------- Package Definitions -----------
+package "elements" {
+    class Element {
+        - int x
+        - int y
+        - int z
+        - List<ElementState> stateHistory
+        + Element(int x, int y, int z)
+        + void update(int tick)
+        + void addStateChange(boolean newState, int tick)
+        + ElementState getCurrentState()
+        + void resetToInitialState()
+        + abstract void interact()
+    }
+
+    class SolidBlock extends Element {
+        - boolean conductsCurrent
+        + SolidBlock(int x, int y, int z)
+        + void update(int tick)
+        + void setConductsCurrent(boolean conductsCurrent, int tick)
+        + boolean isConductingCurrent()
+        + void interact()
+    }
+
+    class Lever extends Element {
+        - boolean state
+        - String position
+        + Lever(int x, int y, int z, boolean state, String position)
+        + String getPosition()
+        + void update(int tick)
+        + void toggle(int tick)
+        + boolean isOn()
+        + void interact()
+    }
+
+    class Wire extends Element {
+        - boolean powered
+        + Wire(int x, int y, int z)
+        + void update(int tick)
+        + void setPowered(boolean powered, int tick)
+        + boolean isPowered()
+        + void interact()
+    }
+
+    class Repeater extends Element {
+        - int delay
+        - String orientation
+        - boolean powered
+        + Repeater(int x, int y, int z, int delay, String orientation)
+        + String getOrientation()
+        + void update(int tick)
+        + void setPowered(boolean powered, int tick)
+        + boolean isPowered()
+        + void interact()
+    }
+
+    class Lamp extends SolidBlock {
+        - boolean state
+        + Lamp(int x, int y, int z)
+        + boolean getState()
+        + void setState(boolean state)
+        + void interact()
+    }
+}
+
+package "simulation.state" {
+    class ElementState {
+        - boolean state
+        - int tickStart
+        - int tickEnd
+        + ElementState(boolean state, int tickStart)
+        + boolean getState()
+        + int getTickStart()
+        + int getTickEnd()
+        + void setTickEnd(int tickEnd)
+    }
+}
+
+package "simulation" {
+    class SimulationEngine {
+        - HashMap<String, Element> elements
+        - int tickCount
+        + SimulationEngine(HashMap<String, Element> elements)
+        + void runSimulation(int maxTicks)
+        + void updateElements()
+        + void resetSimulation()
+    }
+}
+
+package "parser" {
+    class RedyParser {
+        - Pattern PATTERN_FULL
+        + HashMap<String, Element> parse(String filename)
+        + void processElement(String elementType, String args, HashMap<String, Element> elements)
+    }
+}
+
+package "factory" {
+    class ElementFactory {
+        + static Element createElement(String elementType, int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+}
+
+package "factory.creators" {
+    interface ElementCreator {
+        + Element createElement(int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+
+    class LeverCreator implements ElementCreator {
+        + Element createElement(int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+
+    class RepeaterCreator implements ElementCreator {
+        + Element createElement(int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+
+    class WireCreator implements ElementCreator {
+        + Element createElement(int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+
+    class LampCreator implements ElementCreator {
+        + Element createElement(int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+
+    class SolidBlockCreator implements ElementCreator {
+        + Element createElement(int x, int y, int z, String[] args, HashMap<String, String> namedArgs)
+    }
+}
+
+package "exceptions" {
+    class OutOfBoundsException extends Exception {
+        + OutOfBoundsException(String message)
+    }
+
+    class DuplicateElementException extends Exception {
+        + DuplicateElementException(String message)
+    }
+
+    class MissingBlockSupportException extends Exception {
+        + MissingBlockSupportException(String message)
+    }
+}
+
+package "utils" {
+    class ArgumentParser {
+        + static boolean parseBooleanValue(HashMap<String, String> namedArgs, String[] args, String key, int posIndex, boolean defaultValue)
+        + static int parseIntValue(HashMap<String, String> namedArgs, String[] args, String key, int posIndex, int defaultValue)
+        + static String parseStringValue(HashMap<String, String> namedArgs, String[] args, String key, int posIndex, String defaultValue)
+    }
+}
+
+' ----------- Class Relationships -----------
+ElementState --* Element : "1..* stateHistory"
+SimulationEngine --> Element : updates
+RedyParser --> ElementFactory : "uses"
+RedyParser --> ArgumentParser : "uses"
+RedyParser --> OutOfBoundsException : throws
+RedyParser --> DuplicateElementException : throws
+RedyParser --> MissingBlockSupportException : throws
+ElementFactory --> Element : creates
+ElementFactory o-- LeverCreator
+ElementFactory o-- RepeaterCreator
+ElementFactory o-- WireCreator
+ElementFactory o-- LampCreator
+ElementFactory o-- SolidBlockCreator
+ElementFactory --> ArgumentParser : "uses"
+SimulationEngine --> Element : contains
+
+@enduml
